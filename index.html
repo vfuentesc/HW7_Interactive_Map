@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <style>
+        .chart-container{
+            max-width: 1250px;
+            margin: auto auto;
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+        }
+
+        svg{
+            overflow: visible;
+        }
+
+        h1{
+            text-align: center;
+            padding-bottom: 50px;
+        }
+
+        .popup{
+            position: absolute;
+            max-width: 250px;
+            height: 50px;
+            border: 0.5px solid grey;
+            background-color: white;
+            padding: 5px;
+            opacity: 0;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class = "chart-container">
+        <h1 class = "headline">
+            Number of Children in Poverty by Counties, 2019 
+        </h1>
+
+        <svg width="1250px" height="800px"></svg>
+        <div class="popup"> </div>
+
+    </div>
+</body>
+
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<script src="https://unpkg.com/topojson@3"></script>
+
+<script>
+    let width = 1250;
+    let height = 700;
+    let svg = d3.select("body").select("svg")
+
+    d3.json("HW7_Q1_topo.json").then(function (data) {
+
+        let counties = topojson.feature(data, data.objects.county)
+        let states = topojson.feature(data, data.objects.cb_2018_us_state_20m)
+        console.log({counties})
+        console.log({states})
+
+        let projection = d3.geoIdentity()
+            .fitSize([width, height], states)
+            .reflectY(true)                  // Reverding direction
+        
+        let path = d3.geoPath(projection)
+
+        svg.append("g")
+            .attr("class", "states")
+            .selectAll("path")
+            .data(states.features)
+            .join("path")
+            .attr("d", path)
+            .attr("fill", "#eeeeee")
+            .attr("stroke", "white")
+
+        svg.append("text")
+            .attr("class", "label")
+            .attr("x", 0)
+            .attr("y", height - 15)
+            .text("Children: People under 18 years old")
+            .style("fill", "black")
+            .attr("font-size", 12)
+            .attr("font-family","sans-serif")
+            
+        svg.append("text")
+            .attr("class", "label")
+            .attr("x", 0)
+            .attr("y", height)
+            .text("Source: Census Bureau")
+            .style("fill", "black")
+            .attr("font-size", 12)
+            .attr("font-family","sans-serif")
+
+
+        let circles = svg.append("g")
+            .selectAll(".circles")
+            .data(counties.features.filter(d => d.geometry != null).sort((a, b) => d3.descending(a.properties.pop_18_in_poverty, b.properties.pop_18_in_poverty))) //smaller bubbles at top
+            .join("circle")
+            .attr("class", function (d) { return "circles p-" + d.properties.GEOID})
+            .attr("fill", "orange")
+            .attr("stroke", "orange")
+            .attr("fill-opacity", 0.5)
+            .attr("stroke-width", 0.25)
+            .attr("transform", d => `translate(${projection([d.geometry.coordinates[0], d.geometry.coordinates[1]])})`)
+            .attr("r", d => Math.sqrt(d.properties.pop_18_in_poverty / 300))
+
+        let popup = d3.select(".popup")
+
+        circles.on("mouseover", (pointer_event, d) =>{
+                svg.select("p-" +d.properties.GEOID)
+                    .style("stroke-width", 5)
+                    .style("opacity", 1)
+                    .raise()
+
+                popup
+                    .style("opacity", 1)
+                    .style("left", (pointer_event.x + 20) + "px")
+                    .style("top", (pointer_event.y - 20) + "px")
+                    .html(d3.format(",.2r")(d.properties.pop_18_in_poverty)  + " children " + "<br>" + " live in poverty in " + "<br>" + d.properties.Geo_QName)
+        })
+
+        circles.on("mouseout", (pointer_event, d) =>{
+                svg.select("p-" +d.properties.GEOID)
+                    .style("stroke-width", 0.5)
+                    .style("opacity", 0.5)
+                    .raise()
+
+                popup
+                    .style("opacity", 0)
+                    
+        })
+    })
+
+
+
+</script>
+
+
+
+</html>
