@@ -1,0 +1,9 @@
+### Import county shape file (string-fields=Geo_FIPS)
+### Import poverty dataset
+proj albersusa
+points
+join pop_18_poverty keys=GEOID,Geo_FIPS
+style r=Math.sqrt(pop_18_in_poverty/350) fill=orange opacity=0.5 stroke=orange
+### Import state shape file
+proj abersusa
+style fill=#eeeeee stroke=black opacity=1
